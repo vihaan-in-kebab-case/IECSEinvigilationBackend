@@ -1,17 +1,138 @@
-import { supabase } from "../utils/supabaseClient.js";
+import { supabase } from "../utils/supabaseAdmin.js";
+import PDFDocument from "pdfkit";
 
-export async function createExamSlot(req, res) {
-  const { exam_date_id, time_slot_id, classroom_id } = req.body;
+export async function createExamDate(req, res) {
+  const { date } = req.body;
 
   const { data, error } = await supabase
-    .from("exam_slots")
-    .insert([{ exam_date_id, time_slot_id, classroom_id }])
+    .from("exam_dates")
+    .insert({
+      date,
+      created_by: req.user.id
+    })
     .select()
     .single();
 
   if (error) {
-    return res.status(500).json({ message: "Insert failed" });
+    return res.status(400).json({ message: error.message });
   }
 
   res.status(201).json(data);
+}
+
+export async function deleteExamDate(req, res) {
+  const { id } = req.params;
+
+  const { error } = await supabase
+    .from("exam_dates")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.json({ message: "Deleted successfully" });
+}
+
+const CELL_HEIGHT = 25;
+const CELL_PADDING = 5;
+const PAGE_MARGIN = 40;
+function drawCell(doc, x, y, w, h, text) {
+  doc.rect(x, y, w, h).stroke();
+
+  doc
+    .fontSize(9)
+    .text(text, x + CELL_PADDING, y + CELL_PADDING, {
+      width: w - CELL_PADDING * 2,
+      height: h - CELL_PADDING * 2,
+      align: "center",
+      valign: "center"
+    });
+}
+
+function drawTable(doc, date, data) {
+  const { classrooms, slots } = data;
+
+  const startX = PAGE_MARGIN;
+  let startY = PAGE_MARGIN + 40;
+
+  const pageWidth = doc.page.width - PAGE_MARGIN * 2;
+  const timeColWidth = 120;
+  const colWidth = (pageWidth - timeColWidth) / classrooms.length;
+
+  doc.fontSize(16).text(`Exam Schedule — ${date}`, PAGE_MARGIN, PAGE_MARGIN);
+  doc.moveDown();
+
+  drawCell(doc, startX, startY, timeColWidth, CELL_HEIGHT, "Time");
+  classrooms.forEach((room, i) => {
+    drawCell(
+      doc,
+      startX + timeColWidth + i * colWidth,
+      startY,
+      colWidth,
+      CELL_HEIGHT,
+      room
+    );
+  });
+
+  startY += CELL_HEIGHT;
+
+  Object.keys(slots).forEach(time => {
+    drawCell(doc, startX, startY, timeColWidth, CELL_HEIGHT, time);
+
+    classrooms.forEach((room, i) => {
+      drawCell(
+        doc,
+        startX + timeColWidth + i * colWidth,
+        startY,
+        colWidth,
+        CELL_HEIGHT,
+        slots[time][room] ?? "—"
+      );
+    });
+
+    startY += CELL_HEIGHT;
+  });
+}
+
+function generatePdf(res, slots) {
+  const doc = new PDFDocument({ margin: PAGE_MARGIN, layout: "landscape" });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=exam-schedule.pdf"
+  );
+
+  doc.pipe(res);
+
+  const grouped = groupForTable(slots);
+  const dates = Object.keys(grouped);
+
+  dates.forEach((date, index) => {
+    if (index !== 0) doc.addPage();
+    drawTable(doc, date, grouped[date]);
+  });
+
+  doc.end();
+}
+
+export async function exportSchedulePdf(req, res) {
+  const { data, error } = await supabase
+    .from("exam_slots")
+    .select(`
+      exam_dates(date),
+      time_slots(start_time, end_time),
+      classrooms(room_number),
+      assigned_faculty
+    `)
+    .order("exam_date_id", { ascending: true })
+    .order("time_slot_id", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ message: "Failed to fetch schedule" });
+  }
+
+  generatePdf(res, data);
 }

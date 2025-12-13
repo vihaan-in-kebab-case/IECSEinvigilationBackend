@@ -1,9 +1,11 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import authRoutes from "./routes/auth.js";
-import deanRoutes from "./routes/dean.js";
-import facultyRoutes from "./routes/faculty.js";
+
+import authRoutes from "./routes/auth.routes.js";
+import deanRoutes from "./routes/dean.routes.js";
+import facultyRoutes from "./routes/faculty.routes.js";
+
 dotenv.config();
 
 const app = express();
@@ -23,7 +25,9 @@ app.use("/auth", authRoutes);
 app.use("/dean", deanRoutes);
 app.use("/faculty", facultyRoutes);
 
+
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
