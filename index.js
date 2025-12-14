@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import deanRoutes from "./routes/dean.routes.js";
 import facultyRoutes from "./routes/faculty.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 
 dotenv.config();
 
