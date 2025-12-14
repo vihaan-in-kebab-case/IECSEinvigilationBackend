@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { supabase } from "../utils/supabaseAdmin.js";
 
 export async function requireAuth(req, res, next) {
@@ -5,24 +6,38 @@ export async function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
 
     if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Missing Bearer token" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const token = authHeader.split(" ")[1];
 
-    const { data, error } = await supabase.auth.getUser(token);
+    const decoded = jwt.verify(
+      token,
+      process.env.SUPABASE_JWT_SECRET
+    );
 
-    if (error || !data.user) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+    const userId = decoded.sub;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, role, faculty_type")
+      .eq("id", userId)
+      .single();
+
+    if (!profile) {
+      return res.status(403).json({
+        message: "User not onboarded"
+      });
     }
 
     req.user = {
-      id: data.user.id,
-      email: data.user.email,
+      id: profile.id,
+      role: profile.role,
+      facultyType: profile.faculty_type
     };
 
     next();
-  } catch (err) {
-    res.status(500).json({ message: "Authentication failed" });
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
   }
 }

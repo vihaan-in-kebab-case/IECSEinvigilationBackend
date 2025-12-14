@@ -1,18 +1,15 @@
 import express from "express";
 import { requireAuth } from "../middlewares/requireAuth.js";
-import { requireFaculty } from "../middlewares/requireFaculty.js";
 import {
+  getFacultyInfo,
   assignSlot,
-  unassignSlot,
-  getMyAssignments
+  unassignSlot
 } from "../controllers/faculty.controller.js";
 
 const router = express.Router();
 
-router.use(requireAuth, requireFaculty);
-
-router.get("/my-slots", getMyAssignments);
-router.post("/assign/:slotId", assignSlot);
-router.delete("/unassign/:slotId", unassignSlot);
+router.get("/me", requireAuth, getFacultyInfo);
+router.post("/assign/:slotId", requireAuth, assignSlot);
+router.put("/unassign/:slotId", requireAuth, unassignSlot);
 
 export default router;
