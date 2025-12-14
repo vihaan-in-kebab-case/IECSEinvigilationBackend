@@ -1,5 +1,6 @@
 import express from "express";
-import { requireAuth } from "../middlewares/requireAuthAzure.js";
+import { requireAuth } from "../middlewares/requireAuth.js";
+import { requireFaculty } from "../middlewares/requireFaculty.js";
 import {
   getFacultyInfo,
   assignSlot,
@@ -7,9 +8,10 @@ import {
 } from "../controllers/faculty.controller.js";
 
 const router = express.Router();
+router.use(requireAuth, requireFaculty);
 
-router.get("/me", requireAuth, getFacultyInfo);
-router.post("/assign/:slotId", requireAuth, assignSlot);
-router.put("/unassign/:slotId", requireAuth, unassignSlot);
+router.get("/me", getFacultyInfo);
+router.post("/assign/:slotId", assignSlot);
+router.put("/unassign/:slotId", unassignSlot);
 
 export default router;

@@ -20,6 +20,53 @@ export async function createExamDate(req, res) {
   res.status(201).json(data);
 }
 
+export async function generateSlots(req, res) {
+  const { id: examDateId } = req.params;
+
+  const { data: timeSlots, error: tsError } = await supabase
+    .from("time_slots")
+    .select("id");
+
+  if (tsError) {
+    return res.status(500).json({ message: "Failed to fetch time slots" });
+  }
+
+  const { data: classrooms, error: crError } = await supabase
+    .from("classrooms")
+    .select("id");
+
+  if (crError) {
+    return res.status(500).json({ message: "Failed to fetch classrooms" });
+  }
+
+  const slots = [];
+  for (const time of timeSlots) {
+    for (const room of classrooms) {
+      slots.push({
+        exam_date_id: examDateId,
+        time_slot_id: time.id,
+        classroom_id: room.id
+      });
+    }
+  }
+
+  if (slots.length === 0) {
+    return res.status(400).json({ message: "No slots to generate" });
+  }
+
+  const { error } = await supabase
+    .from("exam_slots")
+    .insert(slots);
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.json({
+    message: `Generated ${slots.length} slots`
+  });
+}
+
 export async function deleteExamDate(req, res) {
   const { id } = req.params;
 
@@ -33,6 +80,9 @@ export async function deleteExamDate(req, res) {
   }
 
   res.json({ message: "Deleted successfully" });
+}
+
+export async function deleteSlot(req, res) {
 }
 
 const CELL_HEIGHT = 25;

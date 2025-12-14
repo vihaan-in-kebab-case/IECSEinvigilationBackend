@@ -25,9 +25,7 @@ app.use("/auth", authRoutes);
 app.use("/dean", deanRoutes);
 app.use("/faculty", facultyRoutes);
 
-
-const PORT = process.env.PORT || 3000;
-
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

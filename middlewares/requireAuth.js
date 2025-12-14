@@ -1,4 +1,5 @@
 import { verifyToken } from "../utils/jwt.js";
+import { supabase } from "../utils/supabaseAdmin.js";
 
 export function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
