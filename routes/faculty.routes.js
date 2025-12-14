@@ -11,7 +11,7 @@ const router = express.Router();
 router.use(requireAuth, requireFaculty);
 
 router.get("/me", getFacultyInfo);
-router.post("/assign/:slotId", assignSlot);
-router.put("/unassign/:slotId", unassignSlot);
+router.post("/assign/:slotId/assign", assignSlot);
+router.put("/unassign/:slotId/assign", unassignSlot);
 
 export default router;

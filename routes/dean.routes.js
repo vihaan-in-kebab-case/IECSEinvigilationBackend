@@ -2,21 +2,25 @@ import express from "express";
 import { requireAuth } from "../middlewares/requireAuth.js";
 import { requireDean } from "../middlewares/requireDean.js";
 import {
-  createExamDate,
+  createExamDates,
   deleteExamDate,
   getSchedule,
   exportSchedulePdf,
-  generateSlots,
-  deleteSlot
+  createExamSlot,
+  deleteSlot,
+  createClassroom,
+  deleteClassroom
 } from "../controllers/dean.controller.js";
 
 const router = express.Router();
 router.use(requireAuth, requireDean);
 
-router.post("/exam-dates", createExamDate);
-router.post("/exam-dates/:id/generate-slots", generateSlots);
+router.post("/exam-dates", createExamDates);
+router.post("/classrooms", createClassroom);
+router.post("/exam-slots", createExamSlot);
 router.delete("/exam-dates/:id", deleteExamDate);
-router.delete("/exam-slots/:slotId",deleteSlot);
+router.delete("/exam-slots/:slotId", deleteSlot);
+router.delete("/classrooms/:id", deleteClassroom);
 router.get("/schedule", getSchedule);
 router.get("/schedule/pdf", exportSchedulePdf);
 

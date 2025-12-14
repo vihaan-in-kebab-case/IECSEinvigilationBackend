@@ -10,7 +10,7 @@ export async function login(req, res) {
   }
 
   const { data: user, error } = await supabase
-    .from("users")
+    .from("profiles")
     .select("*")
     .eq("email", email)
     .single();
@@ -28,7 +28,7 @@ export async function login(req, res) {
   const token = signToken({
     id: user.id,
     role: user.role,
-    faculty_type: user.faculty_type
+    faculty_scale: user.faculty_scale
   });
 
   res.json({ token });

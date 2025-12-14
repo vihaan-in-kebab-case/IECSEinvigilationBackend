@@ -1,23 +1,18 @@
 import { supabase } from "../utils/supabaseAdmin.js";
 
 export async function assignSlot(req, res) {
-  const facultyId = req.user.id;
   const { slotId } = req.params;
 
-  try {
-    const { error } = await supabase.rpc("assign_exam_slot", {
-      p_slot_id: slotId,
-      p_faculty_id: facultyId
-    });
+  const { error } = await supabase.rpc("assign_exam_slot", {
+    p_faculty_id: req.user.id,
+    p_slot_id: slotId
+  });
 
-    if (error) {
-      return res.status(400).json({ message: error.message });
-    }
-
-    res.json({ message: "Slot assigned successfully" });
-  } catch {
-    res.status(500).json({ message: "Unexpected error" });
+  if (error) {
+    return res.status(400).json({ message: error.message });
   }
+
+  res.json({ message: "Slot assigned successfully" });
 }
 
 export async function getFacultyInfo(req, res) {
@@ -26,7 +21,7 @@ export async function getFacultyInfo(req, res) {
   try {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, email, role, faculty_type")
+      .select("id, email, role, faculty_scale")
       .eq("id", facultyId)
       .single();
 
@@ -39,12 +34,13 @@ export async function getFacultyInfo(req, res) {
       .select(`
         id,
         exam_dates(date),
-        time_slots(start_time, end_time),
+        start_time,
+        end_time,
         classrooms(room_number)
       `)
       .eq("assigned_faculty", facultyId)
       .order("exam_dates(date)", { ascending: true })
-      .order("time_slots(start_time)", { ascending: true });
+      .order("start_time", { ascending: true });
 
     if (slotsError) {
       return res.status(500).json({ message: "Failed to fetch assigned slots" });

@@ -1,13 +1,109 @@
 import { supabase } from "../utils/supabaseAdmin.js";
 import PDFDocument from "pdfkit";
 
-export async function createExamDate(req, res) {
-  const { date } = req.body;
+export async function createExamDates(req, res) {
+  const { start_date, end_date } = req.body;
+
+  if (!start_date || !end_date) {
+    return res.status(400).json({ message: "Start and end dates required" });
+  }
+
+  const start = new Date(start_date);
+  const end = new Date(end_date);
+
+  if (start > end) {
+    return res.status(400).json({ message: "Invalid date range" });
+  }
+
+  const dates = [];
+  for (
+    let d = new Date(start);
+    d <= end;
+    d.setDate(d.getDate() + 1)
+  ) {
+    dates.push({
+      date: d.toISOString().split("T")[0],
+      created_by: req.user.id
+    });
+  }
 
   const { data, error } = await supabase
     .from("exam_dates")
+    .insert(dates)
+    .select();
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.status(201).json({
+    message: `Created ${data.length} exam dates`,
+    dates: data
+  });
+}
+
+export async function createClassroom(req, res) {
+  const { room_number } = req.body;
+
+  if (!room_number) {
+    return res.status(400).json({ message: "Room number required" });
+  }
+
+  const { data, error } = await supabase
+    .from("classrooms")
+    .insert({ room_number })
+    .select()
+    .single();
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.status(201).json(data);
+}
+
+export async function createExamSlot(req, res) {
+  const {
+    exam_date_id,
+    classroom_id,
+    start_time,
+    end_time,
+  } = req.body;
+
+  if (
+    !exam_date_id ||
+    !classroom_id ||
+    !start_time ||
+    !end_time
+  ) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const { count, error: dupError } = await supabase
+    .from("exam_slots")
+    .select("id", { count: "exact", head: true })
+    .eq("exam_date_id", exam_date_id)
+    .eq("classroom_id", classroom_id)
+    .eq("start_time", start_time)
+    .eq("end_time", end_time);
+
+  if (dupError) {
+    return res.status(500).json({ message: "Failed to check duplicates" });
+  }
+
+  if (count > 0) {
+    return res.status(409).json({
+      message: "Slot already exists for this date, classroom and time"
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("exam_slots")
     .insert({
-      date,
+      exam_date_id,
+      classroom_id,
+      start_time,
+      end_time,
       created_by: req.user.id
     })
     .select()
@@ -20,51 +116,34 @@ export async function createExamDate(req, res) {
   res.status(201).json(data);
 }
 
-export async function generateSlots(req, res) {
-  const { id: examDateId } = req.params;
+export async function deleteClassroom(req, res) {
+  const { id } = req.params;
 
-  const { data: timeSlots, error: tsError } = await supabase
-    .from("time_slots")
-    .select("id");
+  const { count, error: countError } = await supabase
+    .from("exam_slots")
+    .select("id", { count: "exact", head: true })
+    .eq("classroom_id", id);
 
-  if (tsError) {
-    return res.status(500).json({ message: "Failed to fetch time slots" });
+  if (countError) {
+    return res.status(500).json({ message: "Failed to check classroom usage" });
   }
 
-  const { data: classrooms, error: crError } = await supabase
-    .from("classrooms")
-    .select("id");
-
-  if (crError) {
-    return res.status(500).json({ message: "Failed to fetch classrooms" });
-  }
-
-  const slots = [];
-  for (const time of timeSlots) {
-    for (const room of classrooms) {
-      slots.push({
-        exam_date_id: examDateId,
-        time_slot_id: time.id,
-        classroom_id: room.id
-      });
-    }
-  }
-
-  if (slots.length === 0) {
-    return res.status(400).json({ message: "No slots to generate" });
+  if (count > 0) {
+    return res.status(400).json({
+      message: "Cannot delete classroom with existing slots"
+    });
   }
 
   const { error } = await supabase
-    .from("exam_slots")
-    .insert(slots);
+    .from("classrooms")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     return res.status(400).json({ message: error.message });
   }
 
-  res.json({
-    message: `Generated ${slots.length} slots`
-  });
+  res.json({ message: "Classroom deleted successfully" });
 }
 
 export async function deleteExamDate(req, res) {
@@ -96,9 +175,9 @@ export async function deleteSlot(req, res) {
   }
 
   if (slot.assigned_faculty) {
-    return res
-      .status(400)
-      .json({ message: "Cannot delete slot with assigned faculty" });
+    return res.status(400).json({
+      message: "Cannot delete slot with assigned faculty"
+    });
   }
 
   const { error } = await supabase
@@ -120,17 +199,12 @@ export async function getSchedule(req, res) {
     .from("exam_slots")
     .select(`
       id,
-      subject_code,
       assigned_faculty,
+      start_time,
+      end_time,
       exam_dates (
         id,
         date
-      ),
-      time_slots (
-        id,
-        start_time,
-        end_time,
-        half
       ),
       classrooms (
         id,
@@ -138,7 +212,7 @@ export async function getSchedule(req, res) {
       )
     `)
     .order("exam_date_id")
-    .order("time_slot_id")
+    .order("start_time")
     .order("classroom_id");
 
   if (date) {
@@ -215,6 +289,37 @@ function drawTable(doc, date, data) {
   });
 }
 
+function groupForTable(rows) {
+  const result = {};
+
+  rows.forEach(row => {
+    const date = row.exam_dates.date;
+    const room = row.classrooms.room_number;
+    const timeKey = `${row.start_time} - ${row.end_time}`;
+
+    if (!result[date]) {
+      result[date] = {
+        classrooms: new Set(),
+        slots: {}
+      };
+    }
+
+    result[date].classrooms.add(room);
+
+    if (!result[date].slots[timeKey]) {
+      result[date].slots[timeKey] = {};
+    }
+
+    result[date].slots[timeKey][room] = row.assigned_faculty ? "Assigned" : "—";
+  });
+
+  Object.values(result).forEach(day => {
+    day.classrooms = Array.from(day.classrooms).sort();
+  });
+
+  return result;
+}
+
 function generatePdf(res, slots) {
   const doc = new PDFDocument({ margin: PAGE_MARGIN, layout: "landscape" });
 
@@ -242,12 +347,13 @@ export async function exportSchedulePdf(req, res) {
     .from("exam_slots")
     .select(`
       exam_dates(date),
-      time_slots(start_time, end_time),
+      start_time,
+      end_time,
       classrooms(room_number),
       assigned_faculty
     `)
     .order("exam_date_id", { ascending: true })
-    .order("time_slot_id", { ascending: true });
+    .order("start_time", { ascending: true });
 
   if (error) {
     return res.status(500).json({ message: "Failed to fetch schedule" });

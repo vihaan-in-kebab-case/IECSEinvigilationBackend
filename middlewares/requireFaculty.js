@@ -3,7 +3,7 @@ import { supabase } from "../utils/supabaseAdmin.js";
 export async function requireFaculty(req, res, next) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("role, daily_slot_limit")
+    .select("role, faculty_scale")
     .eq("id", req.user.id)
     .single();
 
