@@ -83,6 +83,75 @@ export async function deleteExamDate(req, res) {
 }
 
 export async function deleteSlot(req, res) {
+  const { slotId } = req.params;
+
+  const { data: slot, error: fetchError } = await supabase
+    .from("exam_slots")
+    .select("assigned_faculty")
+    .eq("id", slotId)
+    .single();
+
+  if (fetchError || !slot) {
+    return res.status(404).json({ message: "Slot not found" });
+  }
+
+  if (slot.assigned_faculty) {
+    return res
+      .status(400)
+      .json({ message: "Cannot delete slot with assigned faculty" });
+  }
+
+  const { error } = await supabase
+    .from("exam_slots")
+    .delete()
+    .eq("id", slotId);
+
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  res.json({ message: "Slot deleted successfully" });
+}
+
+export async function getSchedule(req, res) {
+  const { date } = req.query;
+
+  let query = supabase
+    .from("exam_slots")
+    .select(`
+      id,
+      subject_code,
+      assigned_faculty,
+      exam_dates (
+        id,
+        date
+      ),
+      time_slots (
+        id,
+        start_time,
+        end_time,
+        half
+      ),
+      classrooms (
+        id,
+        room_number
+      )
+    `)
+    .order("exam_date_id")
+    .order("time_slot_id")
+    .order("classroom_id");
+
+  if (date) {
+    query = query.eq("exam_dates.date", date);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    return res.status(500).json({ message: error.message });
+  }
+
+  res.json(data);
 }
 
 const CELL_HEIGHT = 25;

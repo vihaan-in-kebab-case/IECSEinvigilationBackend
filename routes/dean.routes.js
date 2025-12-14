@@ -4,6 +4,7 @@ import { requireDean } from "../middlewares/requireDean.js";
 import {
   createExamDate,
   deleteExamDate,
+  getSchedule,
   exportSchedulePdf,
   generateSlots,
   deleteSlot
@@ -15,7 +16,8 @@ router.use(requireAuth, requireDean);
 router.post("/exam-dates", createExamDate);
 router.post("/exam-dates/:id/generate-slots", generateSlots);
 router.delete("/exam-dates/:id", deleteExamDate);
-router.delete("/exam-dates/:id/delete-slot", deleteSlot);
+router.delete("/exam-slots/:slotId",deleteSlot);
+router.get("/schedule", getSchedule);
 router.get("/schedule/pdf", exportSchedulePdf);
 
 export default router;
