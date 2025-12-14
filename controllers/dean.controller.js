@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { supabase } from "../utils/supabaseAdmin.js";
 import PDFDocument from "pdfkit";
 
@@ -360,4 +361,51 @@ export async function exportSchedulePdf(req, res) {
   }
 
   generatePdf(res, data);
+}
+
+export async function onboardFaculty(req, res) {
+  const { email, password, faculty_scale } = req.body;
+
+  if (!email || !password || faculty_scale === undefined) {
+    return res.status(400).json({
+      message: "Email, password and faculty_scale are required"
+    });
+  }
+
+  const { data: authData, error: authError } =
+    await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+  if (authError) {
+    return res.status(400).json({ message: authError.message });
+  }
+
+  const userId = authData.user.id;
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .insert({
+      id: userId,
+      email,
+      role: "faculty",
+      faculty_scale
+    });
+
+  if (profileError) {
+    await supabase.auth.admin.deleteUser(userId);
+    return res.status(500).json({
+      message: "Failed to create faculty profile"
+    });
+  }
+
+  res.status(201).json({
+    message: "Faculty onboarded successfully",
+    faculty: {
+      id: userId,
+      email,
+      faculty_scale
+    }
+  });
 }

@@ -9,7 +9,8 @@ import {
   createExamSlot,
   deleteSlot,
   createClassroom,
-  deleteClassroom
+  deleteClassroom,
+  onboardFaculty
 } from "../controllers/dean.controller.js";
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.delete("/exam-slots/:slotId", deleteSlot);
 router.delete("/classrooms/:id", deleteClassroom);
 router.get("/schedule", getSchedule);
 router.get("/schedule/pdf", exportSchedulePdf);
+router.post("/faculty", onboardFaculty);
 
 export default router;
