@@ -161,13 +161,18 @@ export async function deleteClassroom(req, res) {
     });
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("classrooms")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select();
 
   if (error) {
     return res.status(400).json({ message: error.message });
+  }
+
+  if (!data || data.length === 0) {
+    return res.status(404).json({ message: "Classroom not found" });
   }
 
   res.json({ message: "Classroom deleted successfully" });
@@ -176,16 +181,21 @@ export async function deleteClassroom(req, res) {
 export async function deleteExamDate(req, res) {
   const { id } = req.params;
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("exam_dates")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select();
 
   if (error) {
     return res.status(400).json({ message: error.message });
   }
 
-  res.json({ message: "Deleted successfully" });
+  if (!data || data.length === 0) {
+    return res.status(404).json({ message: "Exam date not found" });
+  }
+
+  res.json({ message: "Exam date deleted successfully" });
 }
 
 export async function deleteSlot(req, res) {
