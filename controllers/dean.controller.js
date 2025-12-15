@@ -2,6 +2,19 @@ import bcrypt from "bcrypt";
 import { supabase } from "../utils/supabaseAdmin.js";
 import PDFDocument from "pdfkit";
 
+export async function listExamDates(req, res) {
+  const { data, error } = await supabase
+    .from("exam_dates")
+    .select("id, date")
+    .order("date", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ message: "Failed to fetch exam dates" });
+  }
+
+  res.json(data);
+}
+
 export async function createExamDates(req, res) {
   const { start_date, end_date } = req.body;
 
@@ -41,6 +54,19 @@ export async function createExamDates(req, res) {
     message: `Created ${data.length} exam dates`,
     dates: data
   });
+}
+
+export async function listClassrooms(req, res) {
+  const { data, error } = await supabase
+    .from("classrooms")
+    .select("id, room_number")
+    .order("room_number", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ message: "Failed to fetch classrooms" });
+  }
+
+  res.json(data);
 }
 
 export async function createClassroom(req, res) {

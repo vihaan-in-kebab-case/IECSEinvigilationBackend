@@ -1,5 +1,28 @@
 import { supabase } from "../utils/supabaseAdmin.js";
 
+export async function listSlots(req, res) {
+  const facultyId = req.user.id;
+
+  const { data, error } = await supabase
+    .from("exam_slots")
+    .select(`
+      id,
+      start_time,
+      end_time,
+      assigned_faculty,
+      exam_dates ( date ),
+      classrooms ( room_number )
+    `)
+    .or(`assigned_faculty.is.null,assigned_faculty.eq.${facultyId}`)
+    .order("exam_dates(date)", { ascending: true })
+    .order("start_time", { ascending: true });
+
+  if (error) {
+    return res.status(500).json({ message: "Failed to fetch slots" });
+  }
+  res.json(data);
+}
+
 export async function assignSlot(req, res) {
   const { slotId } = req.params;
 
