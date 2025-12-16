@@ -78,7 +78,7 @@ export async function createClassroom(req, res) {
 
   const { data, error } = await supabase
     .from("classrooms")
-    .insert({ room_number })
+    .insert({ room_number, created_by: req.user.id })
     .select()
     .single();
 
@@ -91,14 +91,14 @@ export async function createClassroom(req, res) {
 
 export async function createExamSlot(req, res) {
   const {
-    exam_date_id,
+    date_id,
     classroom_id,
     start_time,
     end_time,
   } = req.body;
 
   if (
-    !exam_date_id ||
+    !date_id ||
     !classroom_id ||
     !start_time ||
     !end_time
@@ -109,7 +109,7 @@ export async function createExamSlot(req, res) {
   const { count, error: dupError } = await supabase
     .from("exam_slots")
     .select("id", { count: "exact", head: true })
-    .eq("exam_date_id", exam_date_id)
+    .eq("date_id", date_id)
     .eq("classroom_id", classroom_id)
     .eq("start_time", start_time)
     .eq("end_time", end_time);
@@ -127,7 +127,7 @@ export async function createExamSlot(req, res) {
   const { data, error } = await supabase
     .from("exam_slots")
     .insert({
-      exam_date_id,
+      date_id,
       classroom_id,
       start_time,
       end_time,
@@ -144,12 +144,12 @@ export async function createExamSlot(req, res) {
 }
 
 export async function deleteClassroom(req, res) {
-  const { id } = req.params;
+  const { classroomId } = req.params;
 
   const { count, error: countError } = await supabase
     .from("exam_slots")
     .select("id", { count: "exact", head: true })
-    .eq("classroom_id", id);
+    .eq("classroom_id", classroomId);
 
   if (countError) {
     return res.status(500).json({ message: "Failed to check classroom usage" });
@@ -164,7 +164,7 @@ export async function deleteClassroom(req, res) {
   const { data, error } = await supabase
     .from("classrooms")
     .delete()
-    .eq("id", id)
+    .eq("id", classroomId)
     .select();
 
   if (error) {
@@ -179,12 +179,12 @@ export async function deleteClassroom(req, res) {
 }
 
 export async function deleteExamDate(req, res) {
-  const { id } = req.params;
+  const { dateId } = req.params;
 
   const { data, error } = await supabase
     .from("exam_dates")
     .delete()
-    .eq("id", id)
+    .eq("id", dateId)
     .select();
 
   if (error) {
@@ -248,7 +248,7 @@ export async function getSchedule(req, res) {
         room_number
       )
     `)
-    .order("exam_date_id")
+    .order("date_id")
     .order("start_time")
     .order("classroom_id");
 
@@ -389,7 +389,7 @@ export async function exportSchedulePdf(req, res) {
       classrooms(room_number),
       assigned_faculty
     `)
-    .order("exam_date_id", { ascending: true })
+    .order("date_id", { ascending: true })
     .order("start_time", { ascending: true });
 
   if (error) {
