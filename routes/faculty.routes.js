@@ -9,7 +9,7 @@ import {
 } from "../controllers/faculty.controller.js";
 
 const router = express.Router();
-router.use(requireAuth, requireFaculty);
+router.use(requireAuth);
 
 router.get("/slots", listSlots);
 router.get("/me", getFacultyInfo);
