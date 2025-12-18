@@ -1,6 +1,5 @@
 import express from "express";
 import { requireAuth } from "../middlewares/requireAuth.js";
-import { requireFaculty } from "../middlewares/requireFaculty.js";
 import {
   getFacultyInfo,
   assignSlot,
