@@ -20,7 +20,7 @@ router.use(requireAuth, requireDean);
 
 router.post("/faculty", onboardFaculty);
 router.post("/exam-dates", createExamDates);
-router.post("/classrooms", createClassroom);
+router.post("/classrooms", createClassroom, requireDean);
 router.post("/exam-slots", createExamSlot);
 
 router.delete("/exam-dates/:dateId", deleteExamDate);
