@@ -3,18 +3,33 @@ import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
 
-import authRoutes from "./routes/auth.js";
-//import deanRoutes from "./routes/dean.js";
-//import facultyRoutes from "./routes/faculty.js";
+import authRoutes from "./routes/auth.routes.js";
+import deanRoutes from "./routes/dean.routes.js";
+import facultyRoutes from "./routes/faculty.routes.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/auth", authRoutes);
-//app.use("/dean", deanRoutes);
-//app.use("/faculty", facultyRoutes);
+app.use((req, res, next) => {
+  console.log("➡", req.method, req.url);
+  next();
+});
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+app.get("/", (req, res) => {
+  res.send("Backend is running");
+});
+
+app.use("/auth", authRoutes);
+app.use("/dean", deanRoutes);
+app.use("/faculty", facultyRoutes);
+
+const PORT = process.env.PORT;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Internal server error" });
 });
