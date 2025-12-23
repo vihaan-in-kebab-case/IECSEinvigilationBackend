@@ -430,7 +430,7 @@ export async function onboardFaculty(req, res) {
     });
 
   if (profileError) {
-    await supabase.auth.admin.deleteUser(userId);
+    //await supabase.auth.admin.deleteUser(userId);
     return res.status(500).json({
       message: "Failed to create faculty profile"
     });
