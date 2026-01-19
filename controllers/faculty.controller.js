@@ -24,29 +24,77 @@ export async function listSlots(req, res) {
 }
 
 export async function assignSlot(req, res) {
-  const facultyId = req.user.id;   // logged-in faculty
-  const { slotId } = req.params;
+  try {
+    const { role, id } = req.user;
+    const { slotId } = req.params;
 
-  // 1. Assign slot ONLY if it is unassigned
-  const { data, error } = await supabase
-    .from("exam_slots")
-    .update({ assigned_faculty: facultyId })
-    .eq("id", slotId)
-    .is("assigned_faculty", null)
-    .select()
-    .single();
+    let facultyId;
 
-  if (error || !data) {
-    return res.status(400).json({
-      message: "Slot is already assigned or does not exist"
+    if (role === "faculty") {
+      facultyId = id;
+    }
+
+    if (role === "dean") {
+      facultyId = req.body.facultyId ?? id;
+    }
+
+    if (!facultyId) {
+      return res.status(400).json({ message: "facultyId is required" });
+    }
+
+    const { data: faculty, error: facultyError } = await supabase
+      .from("profiles")
+      .select("id, faculty_scale")
+      .eq("id", facultyId)
+      .single();
+
+    if (facultyError || !faculty) {
+      return res.status(404).json({ message: "Faculty not found" });
+    }
+
+    let quota = 2;
+    if (faculty.faculty_scale === "assistant") quota = 4;
+    if (faculty.faculty_scale === "associate") quota = 3;
+    if (faculty.faculty_scale === "professor") quota = 3;
+    if (faculty.faculty_scale === "dean") quota = 10;
+
+    const { count, error: countError } = await supabase
+      .from("exam_slots")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_faculty", facultyId);
+
+    if (countError) {
+      return res.status(500).json({ message: "Failed to verify faculty quota" });
+    }
+
+    if (count >= quota) {
+      return res.status(409).json({ message: "Faculty quota exceeded" });
+    }
+
+    const { data, error } = await supabase
+      .from("exam_slots")
+      .update({ assigned_faculty: facultyId })
+      .eq("id", slotId)
+      .is("assigned_faculty", null)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return res.status(409).json({
+        message: "Slot already assigned or not found"
+      });
+    }
+
+    res.json({
+      message: "Slot assigned successfully",
+      slot: data
     });
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
   }
-
-  res.json({
-    message: "Slot assigned successfully",
-    slot: data
-  });
 }
+
+
 
 
 export async function getFacultyInfo(req, res) {
