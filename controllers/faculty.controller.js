@@ -24,19 +24,30 @@ export async function listSlots(req, res) {
 }
 
 export async function assignSlot(req, res) {
+  const facultyId = req.user.id;   // logged-in faculty
   const { slotId } = req.params;
 
-  const { error } = await supabase.rpc("assign_exam_slot", {
-    p_faculty_id: req.user.id,
-    p_slot_id: slotId
-  });
+  // 1. Assign slot ONLY if it is unassigned
+  const { data, error } = await supabase
+    .from("exam_slots")
+    .update({ assigned_faculty: facultyId })
+    .eq("id", slotId)
+    .is("assigned_faculty", null)
+    .select()
+    .single();
 
-  if (error) {
-    return res.status(400).json({ message: error.message });
+  if (error || !data) {
+    return res.status(400).json({
+      message: "Slot is already assigned or does not exist"
+    });
   }
 
-  res.json({ message: "Slot assigned successfully" });
+  res.json({
+    message: "Slot assigned successfully",
+    slot: data
+  });
 }
+
 
 export async function getFacultyInfo(req, res) {
   const facultyId = req.user.id;
