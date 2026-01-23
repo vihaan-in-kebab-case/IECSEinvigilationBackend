@@ -235,19 +235,25 @@ export async function getSchedule(req, res) {
   let query = supabase
     .from("exam_slots")
     .select(`
-      id,
-      assigned_faculty,
-      start_time,
-      end_time,
-      exam_dates (
-        id,
-        date
-      ),
-      classrooms (
-        id,
-        room_number
-      )
-    `)
+  id,
+  assigned_faculty,
+  start_time,
+  end_time,
+  exam_dates (
+    id,
+    date
+  ),
+  classrooms (
+    id,
+    room_number
+  ),
+  profiles:assigned_faculty (
+    id,
+    email,
+    faculty_scale
+  )
+`)
+
     .order("date_id")
     .order("start_time")
     .order("classroom_id");
