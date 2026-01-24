@@ -393,7 +393,7 @@ export async function exportSchedulePdf(req, res) {
 }
 
 export async function onboardFaculty(req, res) {
-  const { email, password, faculty_scale } = req.body;
+  const { email, password, faculty_scale, slot_quota } = req.body;
 
   if (!email || !password || faculty_scale === undefined) {
     return res.status(400).json({
@@ -419,7 +419,8 @@ export async function onboardFaculty(req, res) {
       id: userId,
       email,
       role: "faculty",
-      faculty_scale
+      faculty_scale,
+      slot_quota
     });
 
   if (profileError) {
