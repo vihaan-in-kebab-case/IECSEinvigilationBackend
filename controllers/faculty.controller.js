@@ -19,15 +19,21 @@ export async function listSlots(req, res) {
     .order("exam_dates(date)", { ascending: true })
     .order("start_time", { ascending: true });
 
-    const enrichedData = data.map(slot => ({
-        ...slot,
-        status: slot.assigned_faculty ? "filled" : "open"
-    }));
+    const flattened = data.map(slot => ({
+      id: slot.id,
+      date: slot.exam_dates?.date ?? null,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      room_number: slot.classrooms?.room_number ?? null,
+      assigned_faculty_id: slot.assigned_faculty,
+      assigned_faculty_name: slot.profiles?.assigned_faculty_name ?? null,
+      status: slot.assigned_faculty ? "filled" : "open"
+}));
 
   if (error) {
     return res.status(500).json({ message: "Failed to fetch slots" });
   }
-  res.json(enrichedData);
+  res.json(flattened);
 }
 
 export async function assignSlot(req, res) {
@@ -146,9 +152,17 @@ export async function getFacultyInfo(req, res) {
       return res.status(500).json({ message: "Failed to fetch assigned slots" });
     }
 
+    const flattenedSlots = slots.map(slot => ({
+        id: slot.id,
+        date: slot.exam_dates?.date ?? null,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        room_number: slot.classrooms?.room_number ?? null
+}));
+
     res.json({
       profile,
-      assignedSlots: slots
+      assignedSlots: flattenedSlots
     });
   } catch {
     res.status(500).json({ message: "Unexpected error" });
