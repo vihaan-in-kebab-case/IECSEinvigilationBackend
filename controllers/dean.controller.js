@@ -142,24 +142,12 @@ export async function createExamSlot(req, res) {
   res.status(201).json(data);
 }
 
+export async function assignSlotForcefully(req, res) {
+
+}
+
 export async function deleteClassroom(req, res) {
   const { classroomId } = req.params;
-
-  const { count, error: countError } = await supabase
-    .from("exam_slots")
-    .select("id", { count: "exact", head: true })
-    .eq("classroom_id", classroomId);
-
-  if (countError) {
-    return res.status(500).json({ message: "Failed to check classroom usage" });
-  }
-
-  if (count > 0) {
-    return res.status(400).json({
-      message: "Cannot delete classroom with existing slots"
-    });
-  }
-
   const { data, error } = await supabase
     .from("classrooms")
     .delete()
