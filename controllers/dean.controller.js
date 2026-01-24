@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { supabase } from "../utils/supabaseAdmin.js";
 import PDFDocument from "pdfkit";
 

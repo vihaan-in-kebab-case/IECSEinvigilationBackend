@@ -51,19 +51,13 @@ export async function assignSlot(req, res) {
 
     const { data: faculty, error: facultyError } = await supabase
       .from("profiles")
-      .select("id, faculty_scale")
+      .select("id, faculty_scale, slot_quota")
       .eq("id", facultyId)
       .single();
 
     if (facultyError || !faculty) {
       return res.status(404).json({ message: "Faculty not found" });
     }
-
-    let quota = 2;
-    if (faculty.faculty_scale === "assistant") quota = 4;
-    if (faculty.faculty_scale === "associate") quota = 3;
-    if (faculty.faculty_scale === "professor") quota = 3;
-    if (faculty.faculty_scale === "dean") quota = 10;
 
     const { count, error: countError } = await supabase
       .from("exam_slots")
@@ -74,7 +68,7 @@ export async function assignSlot(req, res) {
       return res.status(500).json({ message: "Failed to verify faculty quota" });
     }
 
-    if (count >= quota) {
+    if (count >= slot_quota) {
       return res.status(409).json({ message: "Faculty quota exceeded" });
     }
 
@@ -124,7 +118,6 @@ export async function unassignSlot(req, res) {
 
 export async function getFacultyInfo(req, res) {
   const facultyId = req.user.id;
-
   try {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
