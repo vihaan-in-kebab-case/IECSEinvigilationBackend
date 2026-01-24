@@ -11,16 +11,23 @@ export async function listSlots(req, res) {
       end_time,
       assigned_faculty,
       exam_dates ( date ),
-      classrooms ( room_number )
+      classrooms ( room_number ),
+      profiles!fk_assigned_faculty (
+      assigned_faculty_name: name )
     `)
     .or(`assigned_faculty.is.null,assigned_faculty.eq.${facultyId}`)
     .order("exam_dates(date)", { ascending: true })
     .order("start_time", { ascending: true });
 
+    const enrichedData = data.map(slot => ({
+        ...slot,
+        status: slot.assigned_faculty ? "filled" : "open"
+    }));
+
   if (error) {
     return res.status(500).json({ message: "Failed to fetch slots" });
   }
-  res.json(data);
+  res.json(enrichedData);
 }
 
 export async function assignSlot(req, res) {
@@ -94,8 +101,26 @@ export async function assignSlot(req, res) {
   }
 }
 
+export async function unassignSlot(req, res) {
+  const facultyId = req.user.id;
+  const { slotId } = req.params;
 
+  try {
+    const { error } = await supabase
+      .from("exam_slots")
+      .update({ assigned_faculty: null })
+      .eq("id", slotId)
+      .eq("assigned_faculty", facultyId);
 
+    if (error) {
+      return res.status(400).json({ message: "Cannot unassign slot" });
+    }
+
+    res.json({ message: "Slot unassigned successfully" });
+  } catch {
+    res.status(500).json({ message: "Unexpected error" });
+  }
+}
 
 export async function getFacultyInfo(req, res) {
   const facultyId = req.user.id;
@@ -103,7 +128,7 @@ export async function getFacultyInfo(req, res) {
   try {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, email, role, faculty_scale")
+      .select("id, name, email, role, faculty_scale, slot_quota")
       .eq("id", facultyId)
       .single();
 
@@ -132,27 +157,6 @@ export async function getFacultyInfo(req, res) {
       profile,
       assignedSlots: slots
     });
-  } catch {
-    res.status(500).json({ message: "Unexpected error" });
-  }
-}
-
-export async function unassignSlot(req, res) {
-  const facultyId = req.user.id;
-  const { slotId } = req.params;
-
-  try {
-    const { error } = await supabase
-      .from("exam_slots")
-      .update({ assigned_faculty: null })
-      .eq("id", slotId)
-      .eq("assigned_faculty", facultyId);
-
-    if (error) {
-      return res.status(400).json({ message: "Cannot unassign slot" });
-    }
-
-    res.json({ message: "Slot unassigned successfully" });
   } catch {
     res.status(500).json({ message: "Unexpected error" });
   }
