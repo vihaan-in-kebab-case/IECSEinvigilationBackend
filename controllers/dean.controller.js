@@ -1,7 +1,7 @@
 import { supabase } from "../utils/supabaseAdmin.js";
 import PDFDocument from "pdfkit";
 
-export async function listExamDates(req, res) {
+export async function listExamDates(res) {
   const { data, error } = await supabase
     .from("exam_dates")
     .select("id, date")
@@ -10,7 +10,6 @@ export async function listExamDates(req, res) {
   if (error) {
     return res.status(500).json({ message: "Failed to fetch exam dates" });
   }
-
   res.json(data);
 }
 
@@ -55,7 +54,7 @@ export async function createExamDates(req, res) {
   });
 }
 
-export async function listClassrooms(req, res) {
+export async function listClassrooms(res) {
   const { data, error } = await supabase
     .from("classrooms")
     .select("id, room_number")
@@ -236,6 +235,7 @@ export async function getSchedule(req, res) {
   ),
   profiles:assigned_faculty (
     id,
+    name,
     email,
     faculty_scale
   )

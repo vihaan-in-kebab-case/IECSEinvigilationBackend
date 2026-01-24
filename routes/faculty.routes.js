@@ -10,8 +10,8 @@ import {
 const router = express.Router();
 router.use(requireAuth);
 
-router.get("/slots", listSlots);
-router.get("/me", getFacultyInfo);
+router.get("/list-slots", listSlots);
+router.get("/self-info", getFacultyInfo);
 
 router.post("/assign/:slotId", assignSlot);
 router.put("/unassign/:slotId", unassignSlot);

@@ -18,18 +18,18 @@ import {
 const router = express.Router();
 router.use(requireAuth, requireDean);
 
-router.post("/faculty", onboardFaculty);
-router.post("/exam-dates", createExamDates);
-router.post("/classrooms", createClassroom, requireDean);
-router.post("/exam-slots", createExamSlot);
+router.post("/onboard", onboardFaculty);
+router.post("/create-exam-dates", createExamDates);
+router.post("/create-classrooms", createClassroom);
+router.post("/create-exam-slots", createExamSlot);
 
-router.delete("/exam-dates/:dateId", deleteExamDate);
-router.delete("/classrooms/:classroomId", deleteClassroom);
-router.delete("/exam-slots/:slotId", deleteSlot);
+router.delete("/delete-exam-date/:dateId", deleteExamDate);
+router.delete("/delete-classroom/:classroomId", deleteClassroom);
+router.delete("/delete-exam-slot/:slotId", deleteSlot);
 
-router.get("/exam-dates", listExamDates);
-router.get("/classrooms", listClassrooms);
-router.get("/schedule", getSchedule);
-router.get("/schedule/pdf", exportSchedulePdf);
+router.get("/list-exam-dates", listExamDates);
+router.get("/list-classrooms", listClassrooms);
+router.get("/list-schedule", getSchedule);
+router.get("/pdf-schedule", exportSchedulePdf);
 
 export default router;
