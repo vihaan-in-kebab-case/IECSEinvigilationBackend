@@ -1,6 +1,7 @@
 import { supabase } from "../utils/supabaseAdmin.js";
 import PDFDocument from "pdfkit";
 
+
 export async function listExamDates(req, res) {
   const { data, error } = await supabase
     .from("exam_dates")
@@ -54,7 +55,7 @@ export async function createExamDates(req, res) {
   });
 }
 
-export async function listExamDates(req, res) {
+export async function listClassrooms(req,res) {
   const { data, error } = await supabase
     .from("classrooms")
     .select("id, room_number")
