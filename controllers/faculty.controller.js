@@ -9,25 +9,20 @@ export async function listSlots(req, res) {
       id,
       start_time,
       end_time,
+      status,
       assigned_faculty,
       exam_dates ( date ),
       classrooms ( room_number ),
-      profiles!fk_assigned_faculty (
-      assigned_faculty_name: name )
+      profiles!fk_assigned_faculty ( assigned_faculty_name: name )
     `)
     .or(`assigned_faculty.is.null,assigned_faculty.eq.${facultyId}`)
     .order("exam_dates(date)", { ascending: true })
     .order("start_time", { ascending: true });
 
-    const enrichedData = data.map(slot => ({
-        ...slot,
-        status: slot.assigned_faculty ? "filled" : "open"
-    }));
-
   if (error) {
     return res.status(500).json({ message: "Failed to fetch slots" });
   }
-  res.json(enrichedData);
+  res.json(data);
 }
 
 export async function assignSlot(req, res) {
@@ -74,7 +69,7 @@ export async function assignSlot(req, res) {
 
     const { data, error } = await supabase
       .from("exam_slots")
-      .update({ assigned_faculty: facultyId })
+      .update({ assigned_faculty: facultyId, status: 'filled' })
       .eq("id", slotId)
       .is("assigned_faculty", null)
       .select()
@@ -102,7 +97,7 @@ export async function unassignSlot(req, res) {
   try {
     const { error } = await supabase
       .from("exam_slots")
-      .update({ assigned_faculty: null })
+      .update({ assigned_faculty: null, status: 'open' })
       .eq("id", slotId)
       .eq("assigned_faculty", facultyId);
 
@@ -136,6 +131,7 @@ export async function getFacultyInfo(req, res) {
         exam_dates(date),
         start_time,
         end_time,
+        status,
         classrooms(room_number)
       `)
       .eq("assigned_faculty", facultyId)
