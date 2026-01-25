@@ -142,10 +142,6 @@ export async function createExamSlot(req, res) {
   res.status(201).json(data);
 }
 
-export async function assignSlotForcefully(req, res) {
-
-}
-
 export async function deleteClassroom(req, res) {
   const { classroomId } = req.params;
   const { data, error } = await supabase
@@ -425,7 +421,6 @@ export async function onboardFaculty(req, res) {
     });
 
   if (profileError) {
-    //await supabase.auth.admin.deleteUser(userId);
     return res.status(500).json({
       message: "Failed to create faculty profile"
     });
@@ -439,4 +434,8 @@ export async function onboardFaculty(req, res) {
       faculty_scale
     }
   });
+}
+
+export async function assignSlotForcefully(req, res) {
+
 }

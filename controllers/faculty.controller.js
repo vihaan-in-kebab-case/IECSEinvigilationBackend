@@ -150,3 +150,11 @@ export async function getFacultyInfo(req, res) {
     res.status(500).json({ message: "Unexpected error" });
   }
 }
+
+export async function listSlotsOnDate (req, res) { 
+
+}
+
+export async function listUnavailableSlots (req, res) {
+  
+}
